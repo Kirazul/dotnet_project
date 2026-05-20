@@ -1,0 +1,121 @@
+@page "/edit-asset"
+@page "/edit-asset/{Id:int}"
+@rendermode InteractiveServer
+@attribute [Authorize(Roles = "Admin")]
+@using InvestPortfolio.Models
+@using InvestPortfolio.Services
+@inject IPortfolioService PortfolioService
+@inject NavigationManager NavigationManager
+
+<PageTitle>@(Id.HasValue ? "Modifier l'Actif" : "Nouvel Actif") - InvestPortfolio</PageTitle>
+
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 pt-4 px-4">
+                <h4 class="fw-bold mb-0">
+                    <i class="bi @(Id.HasValue ? "bi-pencil" : "bi-plus-circle") text-primary me-2"></i>
+                    @(Id.HasValue ? "Modifier l'Actif" : "Ajouter un Nouvel Actif")
+                </h4>
+            </div>
+            <div class="card-body p-4">
+                @if (currentAsset == null)
+                {
+                    <p><em>Chargement du formulaire...</em></p>
+                }
+                else
+                {
+                    <EditForm Model="currentAsset" OnValidSubmit="HandleValidSubmit">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary class="text-danger mb-3" />
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Nom de l'actif</label>
+                            <InputText @bind-Value="currentAsset.Name" class="form-control" placeholder="Ex: Apple Inc." />
+                            <ValidationMessage For="@(() => currentAsset.Name)" class="text-danger" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Symbole (Ticker)</label>
+                            <InputText @bind-Value="currentAsset.Symbol" class="form-control" placeholder="Ex: AAPL" />
+                            <ValidationMessage For="@(() => currentAsset.Symbol)" class="text-danger" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Type d'actif</label>
+                            <InputSelect @bind-Value="currentAsset.AssetType" class="form-select">
+                                <option value="">-- Sélectionnez un type --</option>
+                                <option value="Action">Action</option>
+                                <option value="Crypto">Crypto-monnaie</option>
+                                <option value="ETF">ETF</option>
+                            </InputSelect>
+                            <ValidationMessage For="@(() => currentAsset.AssetType)" class="text-danger" />
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Prix actuel</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <InputNumber @bind-Value="currentAsset.CurrentPrice" class="form-control" />
+                            </div>
+                            <small class="text-muted">Modifier le prix enregistre automatiquement l'historique.</small>
+                            <ValidationMessage For="@(() => currentAsset.CurrentPrice)" class="text-danger" />
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary flex-grow-1">
+                                <i class="bi bi-check-lg me-1"></i> Enregistrer
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" @onclick="Cancel">
+                                <i class="bi bi-x-lg me-1"></i> Annuler
+                            </button>
+                        </div>
+                    </EditForm>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int? Id { get; set; }
+
+    private Asset currentAsset;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Id.HasValue)
+        {
+            currentAsset = await PortfolioService.GetAssetByIdAsync(Id.Value);
+        }
+
+        if (currentAsset == null)
+        {
+            currentAsset = new Asset();
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        if (Id.HasValue)
+        {
+            await PortfolioService.UpdateAssetAsync(currentAsset);
+        }
+        else
+        {
+            await PortfolioService.AddAssetAsync(currentAsset);
+        }
+
+        NavigationManager.NavigateTo("/assets");
+    }
+
+    private async Task Cancel()
+    {
+        if (Id.HasValue && currentAsset != null)
+        {
+            await PortfolioService.ReloadAssetAsync(currentAsset);
+        }
+        NavigationManager.NavigateTo("/assets");
+    }
+}

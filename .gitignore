@@ -1,0 +1,27 @@
+bin/
+obj/
+.vs/
+
+# User-specific IDE/project files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Local runtime data
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
+# Local secrets and environment overrides
+.env
+.env.*
+!.env.example
+appsettings.*.local.json
+
+# OS files
+Thumbs.db
+.DS_Store

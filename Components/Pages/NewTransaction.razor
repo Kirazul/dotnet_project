@@ -1,0 +1,250 @@
+@page "/new-transaction"
+@rendermode InteractiveServer
+@attribute [Authorize]
+@using InvestPortfolio.Models
+@using InvestPortfolio.Services
+@inject IPortfolioService PortfolioService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Nouvelle Transaction — InvestPortfolio</PageTitle>
+
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="fw-bold mb-0">
+                    <i class="bi bi-arrow-left-right me-2" style="color: var(--bnb-yellow);"></i>
+                    Nouvelle Transaction
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                @if (Assets == null)
+                {
+                    <p><em>Chargement...</em></p>
+                }
+                else if (!Assets.Any())
+                {
+                    <div class="text-center py-4">
+                        <i class="bi bi-inbox" style="font-size: 2.5rem; color: var(--text-muted);"></i>
+                        <p class="text-muted mt-2 mb-3">Aucun actif disponible. Contactez l'administrateur.</p>
+                        <a href="/assets" class="btn btn-outline-primary">Voir les actifs</a>
+                    </div>
+                }
+                else
+                {
+                    <EditForm Model="currentTransaction" OnValidSubmit="HandleValidSubmit">
+                        <DataAnnotationsValidator />
+
+                        @if (!string.IsNullOrEmpty(ErrorMessage))
+                        {
+                            <div class="alert alert-danger mb-3">
+                                <i class="bi bi-exclamation-triangle me-1"></i> @ErrorMessage
+                            </div>
+                        }
+
+                        <!-- 1. Choix de l'actif -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Actif</label>
+                            <InputSelect @bind-Value="currentTransaction.AssetId"
+                                         @bind-Value:after="OnAssetChanged"
+                                         class="form-select">
+                                <option value="0">-- Sélectionnez un actif --</option>
+                                @foreach (var asset in Assets)
+                                {
+                                    <option value="@asset.Id">@asset.Name (@asset.Symbol)</option>
+                                }
+                            </InputSelect>
+                        </div>
+
+                        <!-- 2. Affichage du prix courant (lecture seule) -->
+                        @if (SelectedAsset != null)
+                        {
+                            <div class="mb-3 p-3 rounded" style="background: var(--bg-tertiary); border: 1px solid var(--border-subtle);">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <small class="text-muted d-block">Prix du marché</small>
+                                        <span class="fw-bold" style="font-size: 1.1rem;">
+                                            @SelectedAsset.Name
+                                        </span>
+                                    </div>
+                                    <div class="text-end">
+                                        <small class="text-muted d-block">Prix unitaire</small>
+                                        <span class="fw-bold" style="color: var(--bnb-yellow); font-size: 1.25rem;">
+                                            @SelectedAsset.CurrentPrice.ToString("N2") $
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        <!-- 3. Type d'opération -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Type d'opération</label>
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" class="btn-check" name="txType" id="txBuy"
+                                       checked="@(currentTransaction.Type == "Achat")"
+                                       @onchange="@(() => currentTransaction.Type = "Achat")" />
+                                <label class="btn btn-outline-success" for="txBuy">
+                                    <i class="bi bi-arrow-down-circle me-1"></i> Achat
+                                </label>
+
+                                <input type="radio" class="btn-check" name="txType" id="txSell"
+                                       checked="@(currentTransaction.Type == "Vente")"
+                                       @onchange="@(() => currentTransaction.Type = "Vente")" />
+                                <label class="btn btn-outline-danger" for="txSell">
+                                    <i class="bi bi-arrow-up-circle me-1"></i> Vente
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- 4. Quantité uniquement -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Quantité</label>
+                            <input type="text"
+                                   inputmode="decimal"
+                                   class="form-control"
+                                   value="@QuantityText"
+                                   @oninput="OnQuantityInput"
+                                   placeholder="Ex: 0.25" />
+                            <small class="text-muted">Décimales supportées (ex: 0.25 ou 0,25)</small>
+                        </div>
+
+                        <!-- 5. Montant total calculé -->
+                        <div class="mb-4 p-3 rounded" style="background: linear-gradient(135deg, rgba(240, 185, 11, 0.1) 0%, rgba(240, 185, 11, 0.02) 100%); border: 1px solid rgba(240, 185, 11, 0.3);">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="text-muted">Montant total</span>
+                                <span class="h4 mb-0 fw-bold" style="color: var(--bnb-yellow);">
+                                    @TotalAmount.ToString("N2") $
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- 6. Notes -->
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Notes (optionnel)</label>
+                            <InputText @bind-Value="currentTransaction.Notes" class="form-control" placeholder="Raison de l'opération..." />
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary flex-grow-1">
+                                <i class="bi bi-check-lg me-1"></i> Valider la Transaction
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" @onclick="Cancel">
+                                <i class="bi bi-x-lg me-1"></i> Annuler
+                            </button>
+                        </div>
+                    </EditForm>
+                }
+            </div>
+        </div>
+
+        @if (Budget != null)
+        {
+            <div class="card mt-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted"><i class="bi bi-bank me-2"></i>Budget disponible</span>
+                        <span class="fw-bold @(Budget.CurrentBalance > 0 ? "text-success" : "text-danger")">
+                            @Budget.CurrentBalance.ToString("N2") $
+                        </span>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private Transaction currentTransaction = new Transaction { Type = "Achat" };
+    private new List<Asset> Assets = new();
+    private Asset SelectedAsset;
+    private Budget Budget;
+    private string ErrorMessage;
+
+    private string QuantityText = "";
+
+    // Montant total = Quantité × Prix unitaire (prix courant de l'actif)
+    private double TotalAmount => currentTransaction.Quantity * (SelectedAsset?.CurrentPrice ?? 0);
+
+    protected override async Task OnInitializedAsync()
+    {
+        Assets = await PortfolioService.GetAssetsAsync();
+        Budget = await PortfolioService.GetBudgetAsync();
+    }
+
+    // Quand l'utilisateur change d'actif, on récupère l'objet complet et on fixe le prix
+    private void OnAssetChanged()
+    {
+        SelectedAsset = Assets.FirstOrDefault(a => a.Id == currentTransaction.AssetId);
+        if (SelectedAsset != null)
+        {
+            currentTransaction.UnitPrice = SelectedAsset.CurrentPrice;
+        }
+    }
+
+    // Parse de la quantité avec support "," et "."
+    private void OnQuantityInput(ChangeEventArgs e)
+    {
+        QuantityText = e.Value?.ToString() ?? "";
+        currentTransaction.Quantity = ParseDouble(QuantityText);
+    }
+
+    private double ParseDouble(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return 0;
+        var normalized = value.Replace(',', '.');
+        return double.TryParse(normalized, System.Globalization.NumberStyles.Any,
+                               System.Globalization.CultureInfo.InvariantCulture, out var result) ? result : 0;
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        ErrorMessage = null;
+
+        if (SelectedAsset == null)
+        {
+            ErrorMessage = "Veuillez sélectionner un actif.";
+            return;
+        }
+
+        if (currentTransaction.Quantity <= 0)
+        {
+            ErrorMessage = "La quantité doit être supérieure à 0.";
+            return;
+        }
+
+        // Toujours utiliser le prix courant de l'actif (source de vérité)
+        currentTransaction.UnitPrice = SelectedAsset.CurrentPrice;
+
+        // Vérif budget pour un achat
+        if (currentTransaction.Type == "Achat" && Budget != null)
+        {
+            if (TotalAmount > Budget.CurrentBalance)
+            {
+                ErrorMessage = $"Budget insuffisant. Disponible : {Budget.CurrentBalance:N2} $.";
+                return;
+            }
+        }
+
+        // Vérif quantité possédée pour une vente
+        if (currentTransaction.Type == "Vente")
+        {
+            var assetTx = await PortfolioService.GetTransactionsByAssetAsync(currentTransaction.AssetId);
+            double held = assetTx.Where(t => t.Type == "Achat").Sum(t => t.Quantity)
+                        - assetTx.Where(t => t.Type == "Vente").Sum(t => t.Quantity);
+            if (currentTransaction.Quantity > held)
+            {
+                ErrorMessage = $"Vous ne possédez que {held:F4} unités de cet actif.";
+                return;
+            }
+        }
+
+        await PortfolioService.AddTransactionAsync(currentTransaction);
+        NavigationManager.NavigateTo("/transactions");
+    }
+
+    private void Cancel()
+    {
+        NavigationManager.NavigateTo("/transactions");
+    }
+}

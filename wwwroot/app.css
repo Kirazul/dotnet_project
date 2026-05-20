@@ -1,0 +1,729 @@
+/* ==========================================================================
+   InvestPortfolio — Binance-Inspired Dark Theme
+   ========================================================================== */
+
+:root {
+    /* Binance palette */
+    --bnb-yellow: #F0B90B;
+    --bnb-yellow-dark: #D9A40A;
+    --bnb-yellow-glow: rgba(240, 185, 11, 0.25);
+    --bnb-green: #0ECB81;
+    --bnb-green-dark: #0BA36C;
+    --bnb-red: #F6465D;
+    --bnb-red-dark: #E03E52;
+
+    /* Dark surfaces */
+    --bg-primary: #0B0E11;
+    --bg-secondary: #141A21;
+    --bg-tertiary: #1E2329;
+    --bg-elevated: #252B33;
+    --bg-hover: #2B3139;
+
+    /* Borders and text */
+    --border-subtle: #2B3139;
+    --border-strong: #3A4048;
+    --text-primary: #EAECEF;
+    --text-secondary: #B7BDC6;
+    --text-muted: #848E9C;
+
+    /* Gradients */
+    --gradient-gold: linear-gradient(135deg, #F0B90B 0%, #D9A40A 100%);
+    --gradient-gold-soft: linear-gradient(135deg, rgba(240, 185, 11, 0.15) 0%, rgba(240, 185, 11, 0.05) 100%);
+    --gradient-dark: linear-gradient(180deg, #0B0E11 0%, #141A21 100%);
+    --gradient-sidebar: linear-gradient(180deg, #0B0E11 0%, #11161C 100%);
+    --gradient-card: linear-gradient(145deg, #1E2329 0%, #181D23 100%);
+    --gradient-success: linear-gradient(135deg, #0ECB81 0%, #0BA36C 100%);
+    --gradient-danger: linear-gradient(135deg, #F6465D 0%, #E03E52 100%);
+    --gradient-auth-bg: radial-gradient(ellipse at top, #1E2329 0%, #0B0E11 60%), linear-gradient(180deg, #0B0E11 0%, #0B0E11 100%);
+
+    /* Shadows & radius */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.5);
+    --shadow-glow: 0 0 0 1px rgba(240, 185, 11, 0.2), 0 8px 24px rgba(240, 185, 11, 0.15);
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    letter-spacing: -0.01em;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: var(--text-primary);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+}
+
+a {
+    color: var(--bnb-yellow);
+    text-decoration: none;
+}
+
+a:hover {
+    color: var(--bnb-yellow-dark);
+}
+
+/* ==========================================================================
+   Auth Pages (Login / Register) — Binance style
+   ========================================================================== */
+
+.auth-wrapper {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+    background: var(--gradient-auth-bg);
+    position: relative;
+    overflow: hidden;
+}
+
+.auth-wrapper::before {
+    content: "";
+    position: absolute;
+    top: -20%;
+    right: -10%;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(240, 185, 11, 0.08) 0%, transparent 70%);
+    filter: blur(40px);
+    pointer-events: none;
+}
+
+.auth-wrapper::after {
+    content: "";
+    position: absolute;
+    bottom: -20%;
+    left: -10%;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(14, 203, 129, 0.05) 0%, transparent 70%);
+    filter: blur(40px);
+    pointer-events: none;
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 420px;
+    background: var(--gradient-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: 2.5rem;
+    box-shadow: var(--shadow-lg);
+    position: relative;
+    z-index: 1;
+}
+
+.auth-brand {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.auth-brand i {
+    font-size: 3rem;
+    background: var(--gradient-gold);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    display: block;
+}
+
+.auth-brand h3 {
+    background: var(--gradient-gold);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* ==========================================================================
+   Cards
+   ========================================================================== */
+
+.card {
+    border: 1px solid var(--border-subtle) !important;
+    border-radius: var(--radius-md) !important;
+    background: var(--gradient-card) !important;
+    color: var(--text-primary);
+    box-shadow: var(--shadow-sm);
+}
+
+.card-header {
+    background-color: transparent !important;
+    border-bottom: 1px solid var(--border-subtle) !important;
+    padding: 1rem 1.25rem;
+    color: var(--text-primary);
+}
+
+.card-body {
+    padding: 1.25rem;
+}
+
+.card h6, .card h5, .card h4, .card h3 {
+    color: var(--text-primary);
+}
+
+/* ==========================================================================
+   KPI Cards
+   ========================================================================== */
+
+.kpi-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.kpi-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--gradient-gold);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.kpi-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--border-strong) !important;
+    box-shadow: var(--shadow-md);
+}
+
+.kpi-card:hover::before {
+    opacity: 1;
+}
+
+.kpi-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    flex-shrink: 0;
+}
+
+/* Subtle colored backgrounds for dark theme */
+.bg-primary-subtle {
+    background: rgba(240, 185, 11, 0.12) !important;
+    color: var(--bnb-yellow) !important;
+}
+.bg-success-subtle {
+    background: rgba(14, 203, 129, 0.12) !important;
+    color: var(--bnb-green) !important;
+}
+.bg-danger-subtle {
+    background: rgba(246, 70, 93, 0.12) !important;
+    color: var(--bnb-red) !important;
+}
+.bg-warning-subtle {
+    background: rgba(240, 185, 11, 0.12) !important;
+    color: var(--bnb-yellow) !important;
+}
+.bg-info-subtle {
+    background: rgba(88, 155, 255, 0.12) !important;
+    color: #589BFF !important;
+}
+
+.bg-light {
+    background: var(--bg-tertiary) !important;
+    color: var(--text-primary) !important;
+}
+
+.text-success { color: var(--bnb-green) !important; }
+.text-danger { color: var(--bnb-red) !important; }
+.text-primary { color: var(--bnb-yellow) !important; }
+.text-warning { color: var(--bnb-yellow) !important; }
+.text-info { color: #589BFF !important; }
+.text-muted { color: var(--text-muted) !important; }
+
+/* ==========================================================================
+   Tables
+   ========================================================================== */
+
+.table {
+    margin-bottom: 0;
+    color: var(--text-primary);
+}
+
+.table > :not(caption) > * > * {
+    padding: 0.875rem 1rem;
+    background-color: transparent;
+    color: var(--text-primary);
+}
+
+.table thead th {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    color: var(--text-muted) !important;
+    background-color: transparent !important;
+    border-bottom: 1px solid var(--border-subtle);
+    padding: 0.75rem 1rem;
+}
+
+.table-light,
+.table-dark {
+    background-color: transparent !important;
+    color: var(--text-muted) !important;
+}
+
+.table tbody td {
+    vertical-align: middle;
+    border-bottom: 1px solid var(--border-subtle);
+    font-size: 0.875rem;
+    color: var(--text-primary);
+}
+
+.table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.table-hover tbody tr {
+    transition: background-color 0.15s ease;
+}
+
+.table-hover tbody tr:hover {
+    background-color: var(--bg-hover);
+}
+
+/* ==========================================================================
+   Buttons
+   ========================================================================== */
+
+.btn {
+    border-radius: var(--radius-sm);
+    font-weight: 500;
+    font-size: 0.875rem;
+    padding: 0.55rem 1.1rem;
+    transition: all 0.15s ease;
+    border: 1px solid transparent;
+}
+
+.btn-primary {
+    background: var(--gradient-gold);
+    border-color: var(--bnb-yellow);
+    color: #0B0E11;
+    font-weight: 600;
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+    background: var(--bnb-yellow);
+    border-color: var(--bnb-yellow);
+    color: #0B0E11;
+    box-shadow: var(--shadow-glow);
+}
+
+.btn-success {
+    background: var(--gradient-success);
+    border-color: var(--bnb-green);
+    color: #fff;
+    font-weight: 600;
+}
+
+.btn-success:hover {
+    background: var(--bnb-green-dark);
+    border-color: var(--bnb-green-dark);
+    color: #fff;
+}
+
+.btn-danger {
+    background: var(--gradient-danger);
+    border-color: var(--bnb-red);
+    color: #fff;
+}
+
+.btn-danger:hover {
+    background: var(--bnb-red-dark);
+    border-color: var(--bnb-red-dark);
+    color: #fff;
+}
+
+.btn-outline-primary {
+    color: var(--bnb-yellow);
+    border-color: var(--bnb-yellow);
+    background-color: transparent;
+}
+
+.btn-outline-primary:hover {
+    background: var(--gradient-gold);
+    border-color: var(--bnb-yellow);
+    color: #0B0E11;
+}
+
+.btn-outline-danger {
+    color: var(--bnb-red);
+    border-color: rgba(246, 70, 93, 0.4);
+    background-color: transparent;
+}
+
+.btn-outline-danger:hover {
+    background: var(--gradient-danger);
+    border-color: var(--bnb-red);
+    color: #fff;
+}
+
+.btn-outline-secondary {
+    color: var(--text-secondary);
+    border-color: var(--border-strong);
+    background-color: transparent;
+}
+
+.btn-outline-secondary:hover {
+    background-color: var(--bg-hover);
+    border-color: var(--border-strong);
+    color: var(--text-primary);
+}
+
+.btn-sm {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.8rem;
+}
+
+.btn-lg {
+    padding: 0.7rem 1.4rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+/* ==========================================================================
+   Forms
+   ========================================================================== */
+
+.form-control, .form-select {
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-subtle);
+    font-size: 0.9rem;
+    padding: 0.6rem 0.875rem;
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.form-control::placeholder {
+    color: var(--text-muted);
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--bnb-yellow);
+    box-shadow: 0 0 0 3px var(--bnb-yellow-glow);
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.form-select {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23848E9C' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+}
+
+.form-label {
+    color: var(--text-secondary);
+    margin-bottom: 0.4rem;
+    font-size: 0.85rem;
+}
+
+.input-group-text {
+    background-color: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-muted);
+    border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+    font-size: 0.9rem;
+}
+
+/* ==========================================================================
+   Badges
+   ========================================================================== */
+
+.badge {
+    font-weight: 500;
+    padding: 0.4em 0.75em;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    letter-spacing: 0.3px;
+}
+
+/* ==========================================================================
+   Alerts
+   ========================================================================== */
+
+.alert {
+    border-radius: var(--radius-sm);
+    border: 1px solid transparent;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+}
+
+.alert-danger {
+    background: rgba(246, 70, 93, 0.1);
+    color: var(--bnb-red);
+    border-color: rgba(246, 70, 93, 0.3);
+}
+
+.alert-success {
+    background: rgba(14, 203, 129, 0.1);
+    color: var(--bnb-green);
+    border-color: rgba(14, 203, 129, 0.3);
+}
+
+.alert-info {
+    background: rgba(88, 155, 255, 0.1);
+    color: #589BFF;
+    border-color: rgba(88, 155, 255, 0.3);
+}
+
+/* ==========================================================================
+   Progress
+   ========================================================================== */
+
+.progress {
+    background-color: var(--bg-elevated);
+    border-radius: 4px;
+}
+
+.progress-bar.bg-success { background-color: var(--bnb-green) !important; }
+.progress-bar.bg-danger { background-color: var(--bnb-red) !important; }
+
+/* ==========================================================================
+   Asset Card
+   ========================================================================== */
+
+.asset-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.asset-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--gradient-gold);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.asset-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--border-strong) !important;
+    box-shadow: var(--shadow-md);
+}
+
+.asset-card:hover::before {
+    opacity: 1;
+}
+
+/* ==========================================================================
+   Radzen Charts — dark theme
+   ========================================================================== */
+
+.rz-chart {
+    min-height: 250px;
+}
+
+.rz-donut-content {
+    text-align: center;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+}
+
+.rz-donut-content div:first-child {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.rz-donut-content div:last-child {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--bnb-yellow);
+}
+
+/* Radzen text color overrides */
+.rz-chart text {
+    fill: var(--text-muted) !important;
+}
+
+.rz-chart .rz-gauge-label {
+    fill: var(--text-primary) !important;
+}
+
+/* ==========================================================================
+   Scrollbar
+   ========================================================================== */
+
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-strong);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+}
+
+/* ==========================================================================
+   Utilities
+   ========================================================================== */
+
+hr {
+    border-color: var(--border-subtle);
+    opacity: 1;
+}
+
+.page-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+}
+
+.page-subtitle {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-top: 0.25rem;
+}
+
+/* Override Bootstrap text colors for dark theme */
+.text-dark {
+    color: var(--text-primary) !important;
+}
+
+/* Input group */
+.input-group .form-control {
+    background-color: var(--bg-tertiary);
+}
+
+/* Placeholder styling */
+em {
+    color: var(--text-muted);
+}
+
+
+/* ==========================================================================
+   Radio button group (Achat/Vente toggle)
+   ========================================================================== */
+
+.btn-check:checked + .btn-outline-success {
+    background: var(--gradient-success);
+    border-color: var(--bnb-green);
+    color: #fff;
+}
+
+.btn-check:checked + .btn-outline-danger {
+    background: var(--gradient-danger);
+    border-color: var(--bnb-red);
+    color: #fff;
+}
+
+.btn-outline-success {
+    color: var(--bnb-green);
+    border-color: rgba(14, 203, 129, 0.4);
+    background-color: transparent;
+}
+
+.btn-outline-success:hover {
+    background: rgba(14, 203, 129, 0.1);
+    color: var(--bnb-green);
+    border-color: var(--bnb-green);
+}
+
+/* ==========================================================================
+   Spinner input arrows on number inputs — dark theme
+   ========================================================================== */
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    opacity: 1;
+    filter: invert(0.7);
+}
+
+/* ==========================================================================
+   Layout fine-tuning
+   ========================================================================== */
+
+.page-title {
+    margin-bottom: 0.25rem;
+}
+
+.content > *:last-child {
+    margin-bottom: 0;
+}
+
+/* Consistent card spacing in grid rows */
+.row.g-3 > [class*="col-"] {
+    display: flex;
+}
+
+.row.g-3 > [class*="col-"] > .card {
+    width: 100%;
+}
+
+
+/* ==========================================================================
+   Fix input-group alignment (dark theme)
+   ========================================================================== */
+
+.input-group {
+    flex-wrap: nowrap;
+}
+
+.input-group > .form-control,
+.input-group > .input-group-text {
+    height: calc(2.25rem + 2px);
+    display: flex;
+    align-items: center;
+}
+
+.input-group > .form-control {
+    border-left: 0;
+}
+
+.input-group > .input-group-text {
+    border-right: 0;
+    padding: 0 0.75rem;
+    min-width: 2.5rem;
+    justify-content: center;
+}
+
+.input-group > .form-control:focus {
+    border-left: 1px solid var(--bnb-yellow);
+}
+
+.input-group > .form-control:focus + .input-group-text,
+.input-group:focus-within > .input-group-text {
+    border-color: var(--bnb-yellow);
+}
+
+.bg-secondary-subtle {
+    background: rgba(132, 142, 156, 0.15) !important;
+    color: var(--text-secondary) !important;
+    border: 1px solid var(--border-subtle);
+}

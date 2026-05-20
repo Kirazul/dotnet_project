@@ -1,0 +1,76 @@
+@using InvestPortfolio.Models
+
+<div class="card asset-card h-100">
+    <div class="card-body">
+        <div class="d-flex align-items-center mb-3">
+            <div class="me-3 @GetTypeColorClass(Asset?.AssetType)">
+                <i class="bi @GetTypeIcon(Asset?.AssetType)" style="font-size: 1.8rem;"></i>
+            </div>
+            <div>
+                <h6 class="card-title mb-0 fw-bold">@Asset?.Name</h6>
+                <span class="badge bg-secondary-subtle mt-1">@Asset?.Symbol</span>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-baseline justify-content-between mb-3">
+            <span class="h4 mb-0 fw-bold">@Asset?.CurrentPrice.ToString("N2") $</span>
+            <span class="badge @GetTypeBadgeClass(Asset?.AssetType)">@Asset?.AssetType</span>
+        </div>
+
+        <div class="d-flex gap-2">
+            <a class="btn btn-sm btn-outline-secondary flex-grow-1" href="@($"/asset-details/{Asset?.Id}")">
+                <i class="bi bi-graph-up me-1"></i> Détails
+            </a>
+            <AuthorizeView Roles="Admin">
+                <Authorized>
+                    <a class="btn btn-sm btn-outline-primary" href="@($"/edit-asset/{Asset?.Id}")" title="Modifier">
+                        <i class="bi bi-pencil"></i>
+                    </a>
+                    <button class="btn btn-sm btn-outline-danger" @onclick="OnDeleteButtonClicked" title="Supprimer">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </Authorized>
+            </AuthorizeView>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public Asset Asset { get; set; }
+
+    [Parameter]
+    public EventCallback<int> OnDeleteClicked { get; set; }
+
+    private async Task OnDeleteButtonClicked()
+    {
+        if (Asset != null)
+        {
+            await OnDeleteClicked.InvokeAsync(Asset.Id);
+        }
+    }
+
+    private string GetTypeIcon(string type) => type switch
+    {
+        "Action" => "bi-building",
+        "Crypto" => "bi-currency-bitcoin",
+        "ETF" => "bi-pie-chart",
+        _ => "bi-coin"
+    };
+
+    private string GetTypeColorClass(string type) => type switch
+    {
+        "Action" => "text-primary",
+        "Crypto" => "text-warning",
+        "ETF" => "text-success",
+        _ => "text-muted"
+    };
+
+    private string GetTypeBadgeClass(string type) => type switch
+    {
+        "Action" => "bg-primary-subtle",
+        "Crypto" => "bg-warning-subtle",
+        "ETF" => "bg-success-subtle",
+        _ => "bg-secondary-subtle"
+    };
+}

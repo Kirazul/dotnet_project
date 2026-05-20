@@ -1,0 +1,83 @@
+@page "/budget"
+@rendermode InteractiveServer
+@attribute [Authorize]
+@using InvestPortfolio.Models
+@using InvestPortfolio.Services
+@inject IPortfolioService PortfolioService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Budget - InvestPortfolio</PageTitle>
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0 fw-bold"><i class="bi bi-bank text-primary me-2"></i>Mon Budget d'Investissement</h5>
+            </div>
+            <div class="card-body p-4">
+                @if (CurrentBudget != null)
+                {
+                    <!-- Affichage du budget actuel -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-6">
+                            <div class="p-3 bg-light rounded text-center">
+                                <small class="text-muted d-block">Capital Initial</small>
+                                <h4 class="fw-bold mb-0">@CurrentBudget.InitialAmount.ToString("N2") $</h4>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-3 bg-light rounded text-center">
+                                <small class="text-muted d-block">Solde Disponible</small>
+                                <h4 class="fw-bold mb-0 @(CurrentBudget.CurrentBalance >= 0 ? "text-success" : "text-danger")">
+                                    @CurrentBudget.CurrentBalance.ToString("N2") $
+                                </h4>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr />
+
+                    <!-- Formulaire pour ajouter des fonds -->
+                    <h6 class="fw-bold mb-3">Ajouter des fonds</h6>
+                    <EditForm Model="this" OnValidSubmit="AddFunds">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text">$</span>
+                            <InputNumber @bind-Value="AmountToAdd" class="form-control" />
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-plus-lg me-1"></i> Ajouter
+                            </button>
+                        </div>
+                    </EditForm>
+
+                    @if (!string.IsNullOrEmpty(Message))
+                    {
+                        <div class="alert alert-success mt-3">@Message</div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private Budget CurrentBudget;
+    private double AmountToAdd;
+    private string Message;
+
+    protected override async Task OnInitializedAsync()
+    {
+        CurrentBudget = await PortfolioService.GetBudgetAsync();
+    }
+
+    private async Task AddFunds()
+    {
+        if (AmountToAdd > 0 && CurrentBudget != null)
+        {
+            CurrentBudget.InitialAmount += AmountToAdd;
+            CurrentBudget.CurrentBalance += AmountToAdd;
+            await PortfolioService.UpdateBudgetAsync(CurrentBudget);
+            Message = $"{AmountToAdd:N2} $ ajoutés avec succès !";
+            AmountToAdd = 0;
+        }
+    }
+}

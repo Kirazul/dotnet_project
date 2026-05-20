@@ -1,0 +1,165 @@
+@page "/analytics"
+@rendermode InteractiveServer
+@attribute [Authorize]
+@using InvestPortfolio.Models
+@using InvestPortfolio.Services
+@inject IPortfolioService PortfolioService
+
+<PageTitle>Analytique - InvestPortfolio</PageTitle>
+
+<div class="mb-4">
+    <h2 class="fw-bold mb-0">Analytique Avancée</h2>
+    <p class="text-muted mb-0">Analyse détaillée de la performance de votre portefeuille</p>
+</div>
+
+@if (PerformanceStats != null)
+{
+    <!-- Performance détaillée par actif -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-0 pt-3">
+            <h6 class="fw-bold mb-0"><i class="bi bi-trophy text-warning me-2"></i>Performance Détaillée par Actif</h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr class="table-light">
+                            <th>Actif</th>
+                            <th>Symbole</th>
+                            <th class="text-end">Gain/Perte ($)</th>
+                            <th class="text-end">Gain/Perte (%)</th>
+                            <th>Performance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var stat in PerformanceStats.OrderByDescending(s => s.GainLossPercent))
+                        {
+                            <tr>
+                                <td class="fw-semibold">@stat.AssetName</td>
+                                <td><span class="badge bg-light text-dark border">@stat.Symbol</span></td>
+                                <td class="text-end">
+                                    <span class="@(stat.GainLoss >= 0 ? "text-success" : "text-danger") fw-semibold">
+                                        @(stat.GainLoss >= 0 ? "+" : "")@stat.GainLoss.ToString("C2")
+                                    </span>
+                                </td>
+                                <td class="text-end">
+                                    <span class="badge @(stat.GainLossPercent >= 0 ? "bg-success-subtle text-success" : "bg-danger-subtle text-danger")">
+                                        <i class="bi @(stat.GainLossPercent >= 0 ? "bi-arrow-up" : "bi-arrow-down")"></i>
+                                        @(stat.GainLossPercent >= 0 ? "+" : "")@stat.GainLossPercent.ToString("F1")%
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="progress" style="height: 8px; width: 120px;">
+                                        @if (stat.GainLossPercent >= 0)
+                                        {
+                                            <div class="progress-bar bg-success" style="width: @Math.Min(stat.GainLossPercent, 100)%"></div>
+                                        }
+                                        else
+                                        {
+                                            <div class="progress-bar bg-danger" style="width: @Math.Min(Math.Abs(stat.GainLossPercent), 100)%"></div>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Graphiques analytiques -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-0 pt-3">
+                    <h6 class="fw-bold mb-0"><i class="bi bi-pie-chart-fill text-primary me-2"></i>Répartition par Type</h6>
+                </div>
+                <div class="card-body">
+                    <RadzenChart>
+                        <RadzenPieSeries Data="@AllocationStats" CategoryProperty="AssetType" ValueProperty="TotalValue" Title="Valeur" />
+                    </RadzenChart>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-0 pt-3">
+                    <h6 class="fw-bold mb-0"><i class="bi bi-bar-chart-fill text-success me-2"></i>Nombre d'Actifs par Type</h6>
+                </div>
+                <div class="card-body">
+                    <RadzenChart>
+                        <RadzenColumnSeries Data="@AllocationStats" CategoryProperty="AssetType" ValueProperty="Count" Title="Nombre" Fill="#6366f1" />
+                        <RadzenLegend Visible="false" />
+                    </RadzenChart>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Flux mensuel détaillé -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-0 pt-3">
+            <h6 class="fw-bold mb-0"><i class="bi bi-graph-up text-info me-2"></i>Évolution Mensuelle des Investissements</h6>
+        </div>
+        <div class="card-body">
+            <RadzenChart Style="height: 350px;">
+                <RadzenLineSeries Data="@MonthlyStats" CategoryProperty="Month" ValueProperty="TotalBuy" Title="Achats" Smooth="true" Stroke="rgb(59, 130, 246)" StrokeWidth="3" />
+                <RadzenLineSeries Data="@MonthlyStats" CategoryProperty="Month" ValueProperty="TotalSell" Title="Ventes" Smooth="true" Stroke="rgb(34, 197, 94)" StrokeWidth="3" />
+                <RadzenValueAxis Formatter="@FormatCurrency" />
+                <RadzenCategoryAxis Padding="20" />
+            </RadzenChart>
+        </div>
+    </div>
+
+    <!-- Résumé statistique -->
+    <div class="row g-3">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm text-center p-4">
+                <i class="bi bi-arrow-down-circle text-primary fs-1 mb-2"></i>
+                <h5 class="fw-bold">@TotalInvested.ToString("C0")</h5>
+                <p class="text-muted mb-0">Total Investi</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm text-center p-4">
+                <i class="bi bi-arrow-up-circle text-success fs-1 mb-2"></i>
+                <h5 class="fw-bold">@TotalSold.ToString("C0")</h5>
+                <p class="text-muted mb-0">Total Vendu</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm text-center p-4">
+                <i class="bi bi-cash-stack text-warning fs-1 mb-2"></i>
+                <h5 class="fw-bold">@TotalTransactions</h5>
+                <p class="text-muted mb-0">Nombre de Transactions</p>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<AssetPerformanceStat> PerformanceStats = new();
+    private List<AssetAllocationStat> AllocationStats = new();
+    private List<MonthlyTransactionStat> MonthlyStats = new();
+    private double TotalInvested;
+    private double TotalSold;
+    private int TotalTransactions;
+
+    protected override async Task OnInitializedAsync()
+    {
+        PerformanceStats = await PortfolioService.GetPerformanceByAssetAsync();
+        AllocationStats = await PortfolioService.GetAllocationByTypeAsync();
+        MonthlyStats = await PortfolioService.GetMonthlyTransactionsAsync();
+
+        var transactions = await PortfolioService.GetTransactionsAsync();
+        TotalInvested = transactions.Where(t => t.Type == "Achat").Sum(t => t.Quantity * t.UnitPrice);
+        TotalSold = transactions.Where(t => t.Type == "Vente").Sum(t => t.Quantity * t.UnitPrice);
+        TotalTransactions = transactions.Count;
+    }
+
+    private string FormatCurrency(object value)
+    {
+        return ((double)value).ToString("N0") + " $";
+    }
+}
