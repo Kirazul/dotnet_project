@@ -6,6 +6,12 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Radzen;
+using System.Globalization;
+
+var culture = (CultureInfo)CultureInfo.CurrentCulture.Clone();
+culture.NumberFormat.CurrencySymbol = "$";
+CultureInfo.DefaultThreadCurrentCulture = culture;
+CultureInfo.DefaultThreadCurrentUICulture = culture;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -57,12 +63,18 @@ using (var scope = app.Services.CreateScope())
     if (!await roleManager.RoleExistsAsync("Admin"))
         await roleManager.CreateAsync(new IdentityRole("Admin"));
 
-    if (await userManager.FindByEmailAsync("admin@invest.com") == null)
+    var adminUser = await userManager.FindByEmailAsync("admin@invest.com");
+    if (adminUser == null)
     {
-        var adminUser = new IdentityUser { UserName = "admin@invest.com", Email = "admin@invest.com" };
+        adminUser = new IdentityUser { UserName = "admin@invest.com", Email = "admin@invest.com" };
         var result = await userManager.CreateAsync(adminUser, "Admin123!");
-        if (result.Succeeded)
-            await userManager.AddToRoleAsync(adminUser, "Admin");
+        if (!result.Succeeded)
+            adminUser = null;
+    }
+
+    if (adminUser != null && !await userManager.IsInRoleAsync(adminUser, "Admin"))
+    {
+        await userManager.AddToRoleAsync(adminUser, "Admin");
     }
 
     if (!context.Budgets.Any())

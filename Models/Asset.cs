@@ -18,6 +18,7 @@ namespace InvestPortfolio.Models
         [Required(ErrorMessage = "Le type d'actif est requis.")]
         public string AssetType { get; set; } = "Action"; // Action, Crypto, ETF
 
+        [Range(0.01, double.MaxValue, ErrorMessage = "Le prix actuel doit être supérieur à 0.")]
         public double CurrentPrice { get; set; }
 
         public DateTime LastUpdate { get; set; } = DateTime.Now;

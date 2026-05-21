@@ -50,8 +50,8 @@
                             }
                         </td>
                         <td class="text-end">@tx.Quantity.ToString("F4")</td>
-                        <td class="text-end">@tx.UnitPrice.ToString("C2")</td>
-                        <td class="text-end fw-semibold">@tx.TotalAmount.ToString("C2")</td>
+                        <td class="text-end">@tx.UnitPrice.ToString("N2") $</td>
+                        <td class="text-end fw-semibold">@tx.TotalAmount.ToString("N2") $</td>
                         <td class="text-center">
                             <button class="btn btn-sm btn-outline-danger" @onclick="() => TriggerDelete(tx.Id)">
                                 <i class="bi bi-trash"></i>
