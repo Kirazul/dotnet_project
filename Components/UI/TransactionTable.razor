@@ -1,0 +1,78 @@
+<!-- Components/UI/TransactionTable.razor -->
+@using InvestPortfolio.Models
+
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead>
+            <tr class="table-light">
+                <th>Date</th>
+                <th>Actif</th>
+                <th>Type</th>
+                <th class="text-end">Quantité</th>
+                <th class="text-end">Prix Unitaire</th>
+                <th class="text-end">Montant Total</th>
+                <th class="text-center">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Transactions == null || !Transactions.Any())
+            {
+                <tr>
+                    <td colspan="7" class="text-center text-muted py-4">
+                        <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                        Aucune transaction disponible.
+                    </td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var tx in Transactions)
+                {
+                    <tr>
+                        <td class="text-muted small">@tx.Date.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>
+                            <span class="fw-semibold">@(tx.Asset?.Name ?? "N/A")</span>
+                            <br />
+                            <small class="text-muted">@(tx.Asset?.Symbol ?? "")</small>
+                        </td>
+                        <td>
+                            @if (tx.Type == "Achat")
+                            {
+                                <span class="badge bg-success-subtle text-success">
+                                    <i class="bi bi-arrow-down-circle"></i> Achat
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger-subtle text-danger">
+                                    <i class="bi bi-arrow-up-circle"></i> Vente
+                                </span>
+                            }
+                        </td>
+                        <td class="text-end">@tx.Quantity.ToString("F4")</td>
+                        <td class="text-end">@tx.UnitPrice.ToString("N2") $</td>
+                        <td class="text-end fw-semibold">@tx.TotalAmount.ToString("N2") $</td>
+                        <td class="text-center">
+                            <button class="btn btn-sm btn-outline-danger" @onclick="() => TriggerDelete(tx.Id)">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    [Parameter]
+    public List<Transaction> Transactions { get; set; } = new();
+
+    [Parameter]
+    public EventCallback<int> OnDeleteClicked { get; set; }
+
+    private async Task TriggerDelete(int id)
+    {
+        await OnDeleteClicked.InvokeAsync(id);
+    }
+}

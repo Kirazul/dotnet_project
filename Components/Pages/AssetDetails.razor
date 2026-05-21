@@ -1,0 +1,195 @@
+@page "/asset-details/{Id:int}"
+@rendermode InteractiveServer
+@attribute [Authorize]
+@using InvestPortfolio.Models
+@using InvestPortfolio.Services
+@inject IPortfolioService PortfolioService
+@inject NavigationManager NavigationManager
+
+<PageTitle>@(CurrentAsset?.Name ?? "Actif") — InvestPortfolio</PageTitle>
+
+@if (CurrentAsset == null)
+{
+    <p class="text-muted"><em>Chargement...</em></p>
+}
+else
+{
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="page-title mb-1">
+                <i class="bi @GetTypeIcon(CurrentAsset.AssetType) me-2" style="color: var(--bnb-yellow);"></i>
+                @CurrentAsset.Name
+                <span class="badge bg-secondary-subtle ms-2" style="font-size: 0.9rem;">@CurrentAsset.Symbol</span>
+            </h2>
+            <p class="page-subtitle mb-0">Historique des prix et transactions</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/new-transaction" class="btn btn-primary">
+                <i class="bi bi-plus-lg me-1"></i> Nouvelle Transaction
+            </a>
+            <AuthorizeView Roles="Admin">
+                <Authorized>
+                    <a href="/edit-asset/@CurrentAsset.Id" class="btn btn-outline-primary">
+                        <i class="bi bi-pencil me-1"></i> Modifier
+                    </a>
+                </Authorized>
+            </AuthorizeView>
+        </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3 col-sm-6">
+            <div class="card kpi-card h-100">
+                <div class="card-body">
+                    <p class="text-muted small mb-1 fw-semibold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">Prix Actuel</p>
+                    <h4 class="mb-0 fw-bold">@CurrentAsset.CurrentPrice.ToString("N2") $</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="card kpi-card h-100">
+                <div class="card-body">
+                    <p class="text-muted small mb-1 fw-semibold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">Quantité Possédée</p>
+                    <h4 class="mb-0 fw-bold">@QuantityHeld.ToString("N4")</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="card kpi-card h-100">
+                <div class="card-body">
+                    <p class="text-muted small mb-1 fw-semibold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">Valeur Position</p>
+                    <h4 class="mb-0 fw-bold">@((QuantityHeld * CurrentAsset.CurrentPrice).ToString("N2")) $</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="card kpi-card h-100">
+                <div class="card-body">
+                    <p class="text-muted small mb-1 fw-semibold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">Prix d'Achat Moyen</p>
+                    <h4 class="mb-0 fw-bold">@AveragePrice.ToString("N2") $</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Price History Chart -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h6 class="mb-0 fw-bold">
+                <i class="bi bi-activity me-2" style="color: var(--bnb-green);"></i>
+                Évolution du Prix
+            </h6>
+        </div>
+        <div class="card-body">
+            @if (PriceHistory.Any())
+            {
+                <RadzenChart Style="height: 320px;">
+                    <RadzenLineSeries Data="@PriceHistory"
+                                      CategoryProperty="Label"
+                                      ValueProperty="Price"
+                                      Title="Prix"
+                                      Smooth="true"
+                                      Stroke="#F0B90B"
+                                      StrokeWidth="3">
+                        <RadzenMarkers MarkerType="MarkerType.Circle" />
+                    </RadzenLineSeries>
+                    <RadzenValueAxis Formatter="@FormatCurrency" />
+                    <RadzenCategoryAxis Padding="20" />
+                </RadzenChart>
+            }
+            else
+            {
+                <p class="text-muted text-center py-4 small">
+                    Aucun historique de prix. L'historique est alimenté à chaque modification du prix par l'Admin.
+                </p>
+            }
+        </div>
+    </div>
+
+    <!-- Transactions for this asset -->
+    <div class="card">
+        <div class="card-header">
+            <h6 class="mb-0 fw-bold">
+                <i class="bi bi-clock-history me-2"></i>
+                Mes Transactions sur cet Actif
+            </h6>
+        </div>
+        <div class="card-body p-0">
+            <TransactionTable Transactions="AssetTransactions" OnDeleteClicked="DeleteTransaction" />
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private Asset CurrentAsset;
+    private List<Transaction> AssetTransactions = new();
+    private List<PriceHistoryPoint> PriceHistory = new();
+    private double QuantityHeld;
+    private double AveragePrice;
+
+    public class PriceHistoryPoint
+    {
+        public string Label { get; set; }
+        public double Price { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        CurrentAsset = await PortfolioService.GetAssetByIdAsync(Id);
+        if (CurrentAsset == null)
+        {
+            NavigationManager.NavigateTo("/assets");
+            return;
+        }
+
+        AssetTransactions = await PortfolioService.GetTransactionsByAssetAsync(Id);
+
+        // Calcul quantité détenue
+        QuantityHeld = AssetTransactions.Where(t => t.Type == "Achat").Sum(t => t.Quantity)
+                     - AssetTransactions.Where(t => t.Type == "Vente").Sum(t => t.Quantity);
+
+        // Prix d'achat moyen pondéré
+        double totalBought = AssetTransactions.Where(t => t.Type == "Achat").Sum(t => t.Quantity);
+        double totalCost = AssetTransactions.Where(t => t.Type == "Achat").Sum(t => t.Quantity * t.UnitPrice);
+        AveragePrice = totalBought > 0 ? totalCost / totalBought : 0;
+
+        // Historique de prix
+        var history = await PortfolioService.GetPriceHistoryAsync(Id);
+        PriceHistory = history
+            .OrderBy(h => h.Timestamp)
+            .Select(h => new PriceHistoryPoint
+            {
+                Label = h.Timestamp.ToString("dd/MM HH:mm"),
+                Price = h.Price
+            })
+            .ToList();
+    }
+
+    private string FormatCurrency(object value)
+    {
+        return ((double)value).ToString("N2") + " $";
+    }
+
+    private async Task DeleteTransaction(int id)
+    {
+        await PortfolioService.DeleteTransactionAsync(id);
+        await LoadData();
+    }
+
+    private string GetTypeIcon(string type) => type switch
+    {
+        "Action" => "bi-building",
+        "Crypto" => "bi-currency-bitcoin",
+        "ETF" => "bi-pie-chart",
+        _ => "bi-coin"
+    };
+}

@@ -1,0 +1,295 @@
+@page "/"
+@page "/dashboard"
+@rendermode InteractiveServer
+@attribute [Authorize]
+@using InvestPortfolio.Models
+@using InvestPortfolio.Services
+@inject IPortfolioService PortfolioService
+@inject IJSRuntime JS
+@implements IDisposable
+
+<PageTitle>Dashboard — InvestPortfolio</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="page-title mb-0">Tableau de Bord</h2>
+        <p class="page-subtitle mb-0">Vue d'ensemble de votre portefeuille</p>
+    </div>
+    <div class="d-flex gap-2">
+        <AuthorizeView Roles="Admin">
+            <Authorized>
+                <a href="/edit-asset" class="btn btn-outline-primary">
+                    <i class="bi bi-plus-lg me-1"></i> Ajouter un Actif
+                </a>
+            </Authorized>
+        </AuthorizeView>
+        <a href="/new-transaction" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i> Nouvelle Transaction
+        </a>
+    </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3 col-sm-6">
+        <div class="card kpi-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted small mb-1 fw-semibold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">Valeur Portefeuille</p>
+                        <h4 class="mb-0 fw-bold">@PortfolioValue.ToString("N2") $</h4>
+                    </div>
+                    <div class="kpi-icon bg-primary-subtle">
+                        <i class="bi bi-wallet2"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="card kpi-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted small mb-1 fw-semibold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">Gain / Perte</p>
+                        <h4 class="mb-0 fw-bold @(GainLoss >= 0 ? "text-success" : "text-danger")">
+                            @(GainLoss >= 0 ? "+" : "")@GainLoss.ToString("N2") $
+                        </h4>
+                    </div>
+                    <div class="kpi-icon @(GainLoss >= 0 ? "bg-success-subtle" : "bg-danger-subtle")">
+                        <i class="bi @(GainLoss >= 0 ? "bi-graph-up-arrow" : "bi-graph-down-arrow")"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="card kpi-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted small mb-1 fw-semibold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">Budget Disponible</p>
+                        <h4 class="mb-0 fw-bold">@BudgetBalance.ToString("N2") $</h4>
+                    </div>
+                    <div class="kpi-icon bg-info-subtle">
+                        <i class="bi bi-bank"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="card kpi-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted small mb-1 fw-semibold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">Nombre d'Actifs</p>
+                        <h4 class="mb-0 fw-bold">@TotalAssets</h4>
+                    </div>
+                    <div class="kpi-icon bg-warning-subtle">
+                        <i class="bi bi-briefcase"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (TotalAssets == 0)
+{
+    <!-- Empty state -->
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-rocket-takeoff" style="font-size: 3rem; color: var(--bnb-yellow);"></i>
+            <h5 class="fw-bold mt-3 mb-2">Commencez à investir</h5>
+            <p class="text-muted mb-4">Ajoutez votre premier actif pour démarrer le suivi de votre portefeuille.</p>
+            <div class="d-flex gap-2 justify-content-center">
+                <a href="/budget" class="btn btn-outline-primary">
+                    <i class="bi bi-bank me-1"></i> Configurer mon Budget
+                </a>
+                <a href="/edit-asset" class="btn btn-primary">
+                    <i class="bi bi-plus-lg me-1"></i> Ajouter un Actif
+                </a>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <!-- Charts -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-5">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0 fw-bold"><i class="bi bi-pie-chart-fill me-2" style="color: var(--bnb-yellow);"></i>Répartition par Type</h6>
+                </div>
+                <div class="card-body">
+                    @if (AllocationStats.Any(a => a.TotalValue > 0))
+                    {
+                        <RadzenChart>
+                            <RadzenDonutSeries Data="@AllocationStats.Where(a => a.TotalValue > 0).ToList()" CategoryProperty="AssetType" ValueProperty="TotalValue">
+                                <TitleTemplate>
+                                    <div class="rz-donut-content">
+                                        <div>Total</div>
+                                        <div>@PortfolioValue.ToString("N0") $</div>
+                                    </div>
+                                </TitleTemplate>
+                            </RadzenDonutSeries>
+                        </RadzenChart>
+                    }
+                    else
+                    {
+                        <p class="text-muted text-center py-4 small">Aucune donnée à afficher. Effectuez des achats.</p>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="col-md-7">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0 fw-bold"><i class="bi bi-bar-chart-fill me-2" style="color: var(--bnb-green);"></i>Performance par Actif</h6>
+                </div>
+                <div class="card-body">
+                    @if (PerformanceStats.Any())
+                    {
+                        <RadzenChart>
+                            <RadzenColumnSeries Data="@PerformanceStats" CategoryProperty="AssetName" ValueProperty="GainLoss" Title="Gain/Perte" Fill="#F0B90B" />
+                            <RadzenValueAxis Formatter="@FormatCurrency" />
+                            <RadzenLegend Visible="false" />
+                        </RadzenChart>
+                    }
+                    else
+                    {
+                        <p class="text-muted text-center py-4 small">Aucune performance à afficher.</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gauge + Monthly -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0 fw-bold"><i class="bi bi-speedometer2 me-2" style="color: var(--bnb-red);"></i>Rendement Global</h6>
+                </div>
+                <div class="card-body text-center d-flex flex-column justify-content-center">
+                    <RadzenRadialGauge Style="width: 100%; height: 220px;">
+                        <RadzenRadialGaugeScale StartAngle="-120" EndAngle="120" Step="25" Min="-50" Max="50" TickPosition="GaugeTickPosition.Outside">
+                            <RadzenRadialGaugeScalePointer Value="@GaugeValue" Length="0.7" ShowValue="true" />
+                            <RadzenRadialGaugeScaleRange From="-50" To="-10" Fill="#F6465D" />
+                            <RadzenRadialGaugeScaleRange From="-10" To="10" Fill="#F0B90B" />
+                            <RadzenRadialGaugeScaleRange From="10" To="50" Fill="#0ECB81" />
+                        </RadzenRadialGaugeScale>
+                    </RadzenRadialGauge>
+                    <small class="text-muted">% de rendement sur capital</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0 fw-bold"><i class="bi bi-calendar-range me-2" style="color: #589BFF;"></i>Flux Mensuel</h6>
+                </div>
+                <div class="card-body">
+                    @if (MonthlyStats.Any())
+                    {
+                        <RadzenChart>
+                            <RadzenColumnSeries Data="@MonthlyStats" CategoryProperty="Month" ValueProperty="TotalBuy" Title="Achats" Fill="#F0B90B" />
+                            <RadzenColumnSeries Data="@MonthlyStats" CategoryProperty="Month" ValueProperty="TotalSell" Title="Ventes" Fill="#0ECB81" />
+                            <RadzenValueAxis Formatter="@FormatCurrency" />
+                        </RadzenChart>
+                    }
+                    else
+                    {
+                        <p class="text-muted text-center py-4 small">Aucune transaction enregistrée.</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h6 class="mb-0 fw-bold"><i class="bi bi-clock-history me-2"></i>Dernières Transactions</h6>
+            <a href="/transactions" class="btn btn-sm btn-outline-secondary">Voir tout</a>
+        </div>
+        <div class="card-body p-0">
+            <TransactionTable Transactions="@RecentTransactions" OnDeleteClicked="DeleteTransaction" />
+        </div>
+    </div>
+}
+
+@code {
+    private double PortfolioValue;
+    private double GainLoss;
+    private double BudgetBalance;
+    private int TotalAssets;
+    private double GaugeValue;
+
+    private List<AssetAllocationStat> AllocationStats = new();
+    private List<AssetPerformanceStat> PerformanceStats = new();
+    private List<MonthlyTransactionStat> MonthlyStats = new();
+    private List<Transaction> RecentTransactions = new();
+
+    private System.Threading.Timer _refreshTimer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDashboard();
+
+        // Rafraîchissement auto toutes les 30 secondes (pour voir les prix changer)
+        _refreshTimer = new System.Threading.Timer(async _ =>
+        {
+            await InvokeAsync(async () =>
+            {
+                await LoadDashboard();
+                StateHasChanged();
+            });
+        }, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+    }
+
+    public void Dispose()
+    {
+        _refreshTimer?.Dispose();
+    }
+
+    private async Task LoadDashboard()
+    {
+        TotalAssets = await PortfolioService.GetTotalAssetsCountAsync();
+        PortfolioValue = await PortfolioService.GetPortfolioValueAsync();
+        GainLoss = await PortfolioService.GetTotalGainLossAsync();
+        BudgetBalance = await PortfolioService.GetBudgetBalanceAsync();
+
+        var budget = await PortfolioService.GetBudgetAsync();
+        if (budget != null && budget.InitialAmount > 0)
+        {
+            GaugeValue = (GainLoss / budget.InitialAmount) * 100;
+            GaugeValue = Math.Max(-50, Math.Min(50, GaugeValue));
+        }
+
+        AllocationStats = await PortfolioService.GetAllocationByTypeAsync();
+        PerformanceStats = await PortfolioService.GetPerformanceByAssetAsync();
+        MonthlyStats = await PortfolioService.GetMonthlyTransactionsAsync();
+
+        var allTransactions = await PortfolioService.GetTransactionsAsync();
+        RecentTransactions = allTransactions.Take(5).ToList();
+    }
+
+    private string FormatCurrency(object value)
+    {
+        return ((double)value).ToString("N0") + " $";
+    }
+
+    private async Task DeleteTransaction(int id)
+    {
+        var confirmed = await JS.InvokeAsync<bool>("confirm", "Supprimer cette transaction ?");
+        if (confirmed)
+        {
+            await PortfolioService.DeleteTransactionAsync(id);
+            await LoadDashboard();
+        }
+    }
+}

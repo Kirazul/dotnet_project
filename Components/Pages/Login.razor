@@ -1,0 +1,52 @@
+@page "/login"
+@layout EmptyLayout
+@inject NavigationManager Nav
+@inject AuthenticationStateProvider AuthStateProvider
+
+<div class="auth-wrapper">
+    <div class="auth-card">
+        <div class="auth-brand">
+            <i class="bi bi-graph-up-arrow"></i>
+            <h3 class="fw-bold mt-2 mb-1">InvestPortfolio</h3>
+            <p class="text-muted small mb-0">Connectez-vous pour accéder à votre portefeuille</p>
+        </div>
+
+        @if (!string.IsNullOrEmpty(Error))
+        {
+            <div class="alert alert-danger py-2 small">@Error</div>
+        }
+
+        <form method="post" action="/api/auth/login" data-enhance="false">
+            <div class="mb-3">
+                <label class="form-label small fw-semibold">Email</label>
+                <input type="email" name="email" class="form-control form-control-lg" placeholder="admin@invest.com" required />
+            </div>
+            <div class="mb-4">
+                <label class="form-label small fw-semibold">Mot de passe</label>
+                <input type="password" name="password" class="form-control form-control-lg" placeholder="••••••" required />
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg w-100 mb-3">
+                <i class="bi bi-box-arrow-in-right me-1"></i> Se connecter
+            </button>
+        </form>
+
+        <div class="text-center small text-muted">
+            Pas de compte ? <a href="/register" class="fw-semibold text-primary">Créer un compte</a>
+        </div>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery]
+    public string Error { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Si déjà connecté, rediriger vers le dashboard
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        if (authState.User.Identity?.IsAuthenticated == true)
+        {
+            Nav.NavigateTo("/dashboard");
+        }
+    }
+}

@@ -1,0 +1,178 @@
+@page "/assets"
+@rendermode InteractiveServer
+@attribute [Authorize]
+@using InvestPortfolio.Models
+@using InvestPortfolio.Services
+@inject IPortfolioService PortfolioService
+@inject IJSRuntime JS
+@implements IDisposable
+
+<PageTitle>Actifs — InvestPortfolio</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="page-title mb-0">Actifs Disponibles</h2>
+        <p class="page-subtitle mb-0">Parcourez les actifs disponibles à l'achat</p>
+    </div>
+    <div class="d-flex gap-2">
+        <AuthorizeView Roles="Admin">
+            <Authorized>
+                <button class="btn btn-outline-secondary" @onclick="SimulatePrices" title="Simule une variation de marché aléatoire">
+                    <i class="bi bi-arrow-repeat me-1"></i> Simuler le marché
+                </button>
+            </Authorized>
+        </AuthorizeView>
+        <a href="/edit-asset" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i> Ajouter Actif
+        </a>
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(SimulationMessage))
+{
+    <div class="alert alert-success mb-3">
+        <i class="bi bi-check-circle me-1"></i> @SimulationMessage
+    </div>
+}
+
+<!-- Recherche & filtres -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text"
+                           @bind="SearchText"
+                           @bind:event="oninput"
+                           class="form-control"
+                           placeholder="Rechercher par nom ou symbole..." />
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" @bind="SelectedType" @bind:after="ExecuteSearch">
+                    <option value="">Tous les types</option>
+                    <option value="Action">Actions</option>
+                    <option value="Crypto">Crypto</option>
+                    <option value="ETF">ETF</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button class="btn btn-outline-secondary w-100" @onclick="() => ShowAsCards = !ShowAsCards">
+                    <i class="bi @(ShowAsCards ? "bi-table" : "bi-grid-3x3-gap")"></i>
+                    @(ShowAsCards ? " Vue Tableau" : " Vue Cartes")
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (FilteredAssets == null)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border" role="status" style="color: var(--bnb-yellow);"></div>
+        <p class="mt-2 text-muted">Chargement...</p>
+    </div>
+}
+else if (!FilteredAssets.Any())
+{
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-inbox" style="font-size: 3rem; color: var(--text-muted);"></i>
+            <h5 class="mt-3 mb-2">Aucun actif disponible</h5>
+            <p class="text-muted mb-0">
+                <AuthorizeView Roles="Admin">
+                    <Authorized>Créez le premier actif avec le bouton "Nouvel Actif".</Authorized>
+                    <NotAuthorized>L'administrateur n'a pas encore ajouté d'actif.</NotAuthorized>
+                </AuthorizeView>
+            </p>
+        </div>
+    </div>
+}
+else
+{
+    @if (ShowAsCards)
+    {
+        <div class="row g-3">
+            @foreach (var asset in FilteredAssets)
+            {
+                <div class="col-12 col-sm-6 col-md-4 col-xl-3">
+                    <AssetCard Asset="asset" OnDeleteClicked="DeleteAsset" />
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="card">
+            <div class="card-body p-0">
+                <AssetTable Assets="FilteredAssets" OnDeleteClicked="DeleteAsset" />
+            </div>
+        </div>
+    }
+}
+
+@code {
+    private List<Asset> FilteredAssets = new();
+    private bool ShowAsCards = false;
+    private string _searchText = "";
+    private string SelectedType = "";
+    private string SimulationMessage;
+    private System.Threading.Timer _refreshTimer;
+
+    private string SearchText
+    {
+        get => _searchText;
+        set
+        {
+            _searchText = value;
+            _ = ExecuteSearch();
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ExecuteSearch();
+
+        // Rafraîchissement auto toutes les 30 secondes pour voir les prix changer
+        _refreshTimer = new System.Threading.Timer(async _ =>
+        {
+            await InvokeAsync(async () =>
+            {
+                await ExecuteSearch();
+                StateHasChanged();
+            });
+        }, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+    }
+
+    public void Dispose()
+    {
+        _refreshTimer?.Dispose();
+    }
+
+    private async Task ExecuteSearch()
+    {
+        FilteredAssets = await PortfolioService.SearchAssetsAsync(_searchText, SelectedType);
+    }
+
+    private async Task DeleteAsset(int id)
+    {
+        var confirmed = await JS.InvokeAsync<bool>("confirm", "Supprimer cet actif et toutes ses transactions ?");
+        if (confirmed)
+        {
+            await PortfolioService.DeleteAssetAsync(id);
+            await ExecuteSearch();
+        }
+    }
+
+    private async Task SimulatePrices()
+    {
+        await PortfolioService.SimulateAllPricesAsync();
+        await ExecuteSearch();
+        SimulationMessage = "Prix du marché mis à jour. Consultez l'historique de chaque actif pour voir l'évolution.";
+        StateHasChanged();
+        await Task.Delay(4000);
+        SimulationMessage = null;
+        StateHasChanged();
+    }
+}

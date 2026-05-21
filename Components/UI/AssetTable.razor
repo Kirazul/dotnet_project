@@ -1,0 +1,98 @@
+<!-- Components/UI/AssetTable.razor -->
+@using InvestPortfolio.Models
+
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead>
+            <tr>
+                <th>Actif</th>
+                <th>Symbole</th>
+                <th>Type</th>
+                <th class="text-end">Prix Actuel</th>
+                <th class="text-end">Dernière MAJ</th>
+                <th class="text-center">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Assets == null || !Assets.Any())
+            {
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-4">
+                        <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                        Aucun actif disponible.
+                    </td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var asset in Assets)
+                {
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <i class="bi @GetTypeIcon(asset.AssetType) me-2 @GetTypeColorClass(asset.AssetType)" style="font-size: 1.25rem;"></i>
+                                <span class="fw-semibold">@asset.Name</span>
+                            </div>
+                        </td>
+                        <td><span class="badge bg-secondary-subtle">@asset.Symbol</span></td>
+                        <td><span class="badge @GetTypeBadgeClass(asset.AssetType)">@asset.AssetType</span></td>
+                        <td class="text-end fw-semibold">@asset.CurrentPrice.ToString("N2") $</td>
+                        <td class="text-end text-muted small">@asset.LastUpdate.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td class="text-center">
+                            <a href="/asset-details/@asset.Id" class="btn btn-sm btn-outline-secondary me-1" title="Voir l'historique">
+                                <i class="bi bi-graph-up"></i>
+                            </a>
+                            <AuthorizeView Roles="Admin">
+                                <Authorized>
+                                    <a href="/edit-asset/@asset.Id" class="btn btn-sm btn-outline-primary me-1" title="Modifier">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => TriggerDelete(asset.Id)" title="Supprimer">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </Authorized>
+                            </AuthorizeView>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    [Parameter]
+    public new List<Asset> Assets { get; set; } = new();
+
+    [Parameter]
+    public EventCallback<int> OnDeleteClicked { get; set; }
+
+    private async Task TriggerDelete(int id)
+    {
+        await OnDeleteClicked.InvokeAsync(id);
+    }
+
+    private string GetTypeIcon(string type) => type switch
+    {
+        "Action" => "bi-building",
+        "Crypto" => "bi-currency-bitcoin",
+        "ETF" => "bi-pie-chart",
+        _ => "bi-coin"
+    };
+
+    private string GetTypeColorClass(string type) => type switch
+    {
+        "Action" => "text-primary",
+        "Crypto" => "text-warning",
+        "ETF" => "text-success",
+        _ => "text-muted"
+    };
+
+    private string GetTypeBadgeClass(string type) => type switch
+    {
+        "Action" => "bg-primary-subtle",
+        "Crypto" => "bg-warning-subtle",
+        "ETF" => "bg-success-subtle",
+        _ => "bg-secondary-subtle"
+    };
+}
