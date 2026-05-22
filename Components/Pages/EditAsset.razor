@@ -1,7 +1,7 @@
 @page "/edit-asset"
 @page "/edit-asset/{Id:int}"
 @rendermode InteractiveServer
-@attribute [Authorize(Roles = "Admin")]
+@attribute [Authorize]
 @using InvestPortfolio.Models
 @using InvestPortfolio.Services
 @inject IPortfolioService PortfolioService

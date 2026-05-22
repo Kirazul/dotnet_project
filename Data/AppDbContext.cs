@@ -16,5 +16,15 @@ namespace InvestPortfolio.Data
         public DbSet<PriceHistory> PriceHistories { get; set; }
         public DbSet<Tag> Tags { get; set; }
         public DbSet<Budget> Budgets { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder builder)
+        {
+            base.OnModelCreating(builder);
+
+            builder.Entity<Asset>().HasIndex(a => a.UserId);
+            builder.Entity<Budget>().HasIndex(b => b.UserId);
+            builder.Entity<Transaction>().HasIndex(t => t.UserId);
+            builder.Entity<Tag>().HasIndex(t => t.UserId);
+        }
     }
 }

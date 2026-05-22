@@ -42,16 +42,12 @@
                             <a href="/asset-details/@asset.Id" class="btn btn-sm btn-outline-secondary me-1" title="Voir l'historique">
                                 <i class="bi bi-graph-up"></i>
                             </a>
-                            <AuthorizeView Roles="Admin">
-                                <Authorized>
-                                    <a href="/edit-asset/@asset.Id" class="btn btn-sm btn-outline-primary me-1" title="Modifier">
-                                        <i class="bi bi-pencil"></i>
-                                    </a>
-                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => TriggerDelete(asset.Id)" title="Supprimer">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </Authorized>
-                            </AuthorizeView>
+                            <a href="/edit-asset/@asset.Id" class="btn btn-sm btn-outline-primary me-1" title="Modifier">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <button class="btn btn-sm btn-outline-danger" @onclick="() => TriggerDelete(asset.Id)" title="Supprimer">
+                                <i class="bi bi-trash"></i>
+                            </button>
                         </td>
                     </tr>
                 }

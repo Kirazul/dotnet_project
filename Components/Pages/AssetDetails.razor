@@ -27,13 +27,9 @@ else
             <a href="/new-transaction" class="btn btn-primary">
                 <i class="bi bi-plus-lg me-1"></i> Nouvelle Transaction
             </a>
-            <AuthorizeView Roles="Admin">
-                <Authorized>
-                    <a href="/edit-asset/@CurrentAsset.Id" class="btn btn-outline-primary">
-                        <i class="bi bi-pencil me-1"></i> Modifier
-                    </a>
-                </Authorized>
-            </AuthorizeView>
+            <a href="/edit-asset/@CurrentAsset.Id" class="btn btn-outline-primary">
+                <i class="bi bi-pencil me-1"></i> Modifier
+            </a>
         </div>
     </div>
 

@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Radzen;
+using System.Data;
 using System.Globalization;
 
 var culture = (CultureInfo)CultureInfo.CurrentCulture.Clone();
@@ -59,6 +60,7 @@ using (var scope = app.Services.CreateScope())
     var userManager = services.GetRequiredService<UserManager<IdentityUser>>();
 
     context.Database.EnsureCreated();
+    EnsureUserOwnershipSchema(context);
 
     if (!await roleManager.RoleExistsAsync("Admin"))
         await roleManager.CreateAsync(new IdentityRole("Admin"));
@@ -77,15 +79,21 @@ using (var scope = app.Services.CreateScope())
         await userManager.AddToRoleAsync(adminUser, "Admin");
     }
 
-    if (!context.Budgets.Any())
+    if (adminUser != null)
     {
-        context.Budgets.Add(new Budget
+        AssignLegacyPortfolioData(context, adminUser.Id);
+
+        if (!context.Budgets.Any(b => b.UserId == adminUser.Id))
         {
-            InitialAmount = 0,
-            CurrentBalance = 0,
-            CreatedAt = DateTime.Now
-        });
-        context.SaveChanges();
+            context.Budgets.Add(new Budget
+            {
+                UserId = adminUser.Id,
+                InitialAmount = 0,
+                CurrentBalance = 0,
+                CreatedAt = DateTime.Now
+            });
+            context.SaveChanges();
+        }
     }
 }
 
@@ -137,3 +145,56 @@ app.MapPost("/api/auth/logout", async ([FromServices] SignInManager<IdentityUser
 }).DisableAntiforgery();
 
 app.Run();
+
+static void EnsureUserOwnershipSchema(AppDbContext context)
+{
+    EnsureColumn(context, "Assets", "UserId", "TEXT NOT NULL DEFAULT ''");
+    EnsureColumn(context, "Budgets", "UserId", "TEXT NOT NULL DEFAULT ''");
+    EnsureColumn(context, "Transactions", "UserId", "TEXT NOT NULL DEFAULT ''");
+    EnsureColumn(context, "Tags", "UserId", "TEXT NOT NULL DEFAULT ''");
+
+    context.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_Assets_UserId ON Assets (UserId)");
+    context.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_Budgets_UserId ON Budgets (UserId)");
+    context.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_Transactions_UserId ON Transactions (UserId)");
+    context.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_Tags_UserId ON Tags (UserId)");
+}
+
+static void EnsureColumn(AppDbContext context, string table, string column, string definition)
+{
+    var connection = context.Database.GetDbConnection();
+    if (connection.State != ConnectionState.Open)
+    {
+        connection.Open();
+    }
+
+    using var checkCommand = connection.CreateCommand();
+    checkCommand.CommandText = $"PRAGMA table_info({table})";
+
+    var exists = false;
+    using (var reader = checkCommand.ExecuteReader())
+    {
+        while (reader.Read())
+        {
+            if (string.Equals(reader.GetString(1), column, StringComparison.OrdinalIgnoreCase))
+            {
+                exists = true;
+                break;
+            }
+        }
+    }
+
+    if (!exists)
+    {
+        using var alterCommand = connection.CreateCommand();
+        alterCommand.CommandText = $"ALTER TABLE {table} ADD COLUMN {column} {definition}";
+        alterCommand.ExecuteNonQuery();
+    }
+}
+
+static void AssignLegacyPortfolioData(AppDbContext context, string userId)
+{
+    context.Database.ExecuteSqlRaw("UPDATE Assets SET UserId = {0} WHERE UserId = '' OR UserId IS NULL", userId);
+    context.Database.ExecuteSqlRaw("UPDATE Budgets SET UserId = {0} WHERE UserId = '' OR UserId IS NULL", userId);
+    context.Database.ExecuteSqlRaw("UPDATE Transactions SET UserId = {0} WHERE UserId = '' OR UserId IS NULL", userId);
+    context.Database.ExecuteSqlRaw("UPDATE Tags SET UserId = {0} WHERE UserId = '' OR UserId IS NULL", userId);
+}

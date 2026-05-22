@@ -8,6 +8,9 @@ namespace InvestPortfolio.Models
         public int Id { get; set; }
 
         [Required]
+        public string UserId { get; set; } = "";
+
+        [Required]
         [StringLength(30)]
         public string Label { get; set; }
 

@@ -14,18 +14,14 @@
         <h2 class="page-title mb-0">Actifs Disponibles</h2>
         <p class="page-subtitle mb-0">Parcourez les actifs disponibles à l'achat</p>
     </div>
-    <AuthorizeView Roles="Admin">
-        <Authorized>
-            <div class="d-flex gap-2">
-                <button class="btn btn-outline-secondary" @onclick="SimulatePrices" title="Simule une variation de marché aléatoire">
-                    <i class="bi bi-arrow-repeat me-1"></i> Simuler le marché
-                </button>
-                <a href="/edit-asset" class="btn btn-primary">
-                    <i class="bi bi-plus-lg me-1"></i> Nouvel Actif
-                </a>
-            </div>
-        </Authorized>
-    </AuthorizeView>
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-secondary" @onclick="SimulatePrices" title="Simule une variation de marché aléatoire">
+            <i class="bi bi-arrow-repeat me-1"></i> Simuler le marché
+        </button>
+        <a href="/edit-asset" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i> Nouvel Actif
+        </a>
+    </div>
 </div>
 
 @if (!string.IsNullOrEmpty(SimulationMessage))
@@ -81,10 +77,7 @@ else if (!FilteredAssets.Any())
             <i class="bi bi-inbox" style="font-size: 3rem; color: var(--text-muted);"></i>
             <h5 class="mt-3 mb-2">Aucun actif disponible</h5>
             <p class="text-muted mb-0">
-                <AuthorizeView Roles="Admin">
-                    <Authorized>Créez le premier actif avec le bouton "Nouvel Actif".</Authorized>
-                    <NotAuthorized>L'administrateur n'a pas encore ajouté d'actif.</NotAuthorized>
-                </AuthorizeView>
+                Créez le premier actif avec le bouton "Nouvel Actif".
             </p>
         </div>
     </div>
@@ -167,7 +160,7 @@ else
 
     private async Task SimulatePrices()
     {
-        await PortfolioService.SimulateAllPricesAsync();
+        await PortfolioService.SimulateOwnedPricesAsync();
         await ExecuteSearch();
         SimulationMessage = "Prix du marché mis à jour. Consultez l'historique de chaque actif pour voir l'évolution.";
         StateHasChanged();

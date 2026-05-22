@@ -7,6 +7,9 @@ namespace InvestPortfolio.Models
         [Key]
         public int Id { get; set; }
 
+        [Required]
+        public string UserId { get; set; } = "";
+
         [Required(ErrorMessage = "Le montant initial est requis.")]
         [Range(0.01, double.MaxValue, ErrorMessage = "Le budget doit être supérieur à 0.")]
         public double InitialAmount { get; set; }

@@ -7,6 +7,9 @@ namespace InvestPortfolio.Models
         [Key]
         public int Id { get; set; }
 
+        [Required]
+        public string UserId { get; set; } = "";
+
         [Required(ErrorMessage = "Le nom de l'actif est requis.")]
         [StringLength(100, MinimumLength = 2, ErrorMessage = "Le nom doit faire entre 2 et 100 caractères.")]
         public string Name { get; set; }

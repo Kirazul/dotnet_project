@@ -45,6 +45,7 @@ namespace InvestPortfolio.Services
 
         // ===== Simulation de variation de prix (marche aléatoire) =====
         Task SimulatePriceChangeAsync(int assetId);
+        Task SimulateOwnedPricesAsync();
         Task SimulateAllPricesAsync();
     }
 }
