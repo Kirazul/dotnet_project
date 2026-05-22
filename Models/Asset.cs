@@ -7,7 +7,6 @@ namespace InvestPortfolio.Models
         [Key]
         public int Id { get; set; }
 
-        [Required]
         public string UserId { get; set; } = "";
 
         [Required(ErrorMessage = "Le nom de l'actif est requis.")]
